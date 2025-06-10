@@ -1,5 +1,17 @@
+# Simple configuration
 host = "192.168.1.100"
 port = 8006
 token = "root@pam!backup=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 verify_ssl = false
-timeout = 30
+
+# Multiple clusters configuration
+[clusters.prod]
+hosts = ["192.168.1.100", "192.168.1.101", "192.168.1.102"]
+token = "root@pam!prod=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+verify_ssl = true
+
+[clusters.dev]
+hosts = ["192.168.2.100", "192.168.2.101"]
+port = 8006
+token = "root@pam!dev=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+verify_ssl = true

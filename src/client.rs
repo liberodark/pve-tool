@@ -23,6 +23,36 @@ impl ProxmoxClient {
         })
     }
 
+    pub async fn new_with_fallback(
+        hosts: &[String],
+        port: u16,
+        token: Option<String>,
+        verify_ssl: bool,
+    ) -> Result<Self> {
+        let client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(!verify_ssl)
+            .build()?;
+
+        for host in hosts {
+            let base_url = format!("https://{}:{}/api2/json", host, port);
+            let test_client = Self {
+                base_url: base_url.clone(),
+                token: token.clone(),
+                client: client.clone(),
+            };
+
+            if test_client
+                .get::<serde_json::Value>("/version")
+                .await
+                .is_ok()
+            {
+                return Ok(test_client);
+            }
+        }
+
+        anyhow::bail!("All hosts failed")
+    }
+
     pub async fn get<T: for<'de> Deserialize<'de>>(&self, endpoint: &str) -> Result<T> {
         let url = format!("{}{}", self.base_url, endpoint);
         let mut request = self.client.get(&url);

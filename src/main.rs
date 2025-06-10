@@ -1,24 +1,16 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use serde::Deserialize;
 use std::fs;
 
 mod client;
 mod cluster;
+mod config;
 mod snapshot;
 
 use client::ProxmoxClient;
 use cluster::ClusterManager;
+use config::Config;
 use snapshot::SnapshotManager;
-
-#[derive(Debug, Deserialize, Default)]
-struct Config {
-    host: Option<String>,
-    port: Option<u16>,
-    token: Option<String>,
-    node: Option<String>,
-    verify_ssl: Option<bool>,
-}
 
 #[derive(Parser)]
 #[command(name = "pve-tool")]
@@ -44,6 +36,9 @@ struct Cli {
 
     #[arg(short = 'R', long)]
     raw: bool,
+
+    #[arg(long, help = "Cluster name from config file")]
+    cluster: Option<String>,
 
     #[command(subcommand)]
     command: Commands,
@@ -89,45 +84,61 @@ enum Commands {
 async fn main() -> Result<()> {
     let mut cli = Cli::parse();
 
+    let mut config = Config::default();
     if let Some(config_path) = &cli.config {
         if let Ok(config_str) = fs::read_to_string(config_path) {
-            if let Ok(config) = toml::from_str::<Config>(&config_str) {
-                if cli.host == "192.168.1.1" && std::env::var("PROXMOX_HOST").is_err() {
-                    if let Some(host) = config.host {
-                        cli.host = host;
-                    }
-                }
-
-                if cli.port == 8006 && std::env::var("PROXMOX_PORT").is_err() {
-                    if let Some(port) = config.port {
-                        cli.port = port;
-                    }
-                }
-
-                if cli.token.is_none() && std::env::var("PROXMOX_API_TOKEN").is_err() {
-                    cli.token = config.token;
-                }
-
-                if cli.node.is_none() && std::env::var("PROXMOX_NODE").is_err() {
-                    cli.node = config.node;
-                }
-
-                if cli.verify_ssl.is_none() && std::env::var("PROXMOX_VERIFY_SSL").is_err() {
-                    cli.verify_ssl = config.verify_ssl;
-                }
-            }
+            config = toml::from_str::<Config>(&config_str)?;
         }
     }
 
-    if cli.token.is_none() {
-        eprintln!(
-            "Error: API token is required. Set PROXMOX_API_TOKEN, use -t, or add to config file"
-        );
-        std::process::exit(1);
+    if cli.host == "192.168.1.1" && std::env::var("PROXMOX_HOST").is_err() {
+        if let Some(host) = &config.host {
+            cli.host = host.clone();
+        }
     }
 
-    let verify_ssl = cli.verify_ssl.unwrap_or(false);
-    let client = ProxmoxClient::new(&cli.host, cli.port, cli.token, verify_ssl)?;
+    if cli.port == 8006 && std::env::var("PROXMOX_PORT").is_err() {
+        if let Some(port) = config.port {
+            cli.port = port;
+        }
+    }
+
+    if cli.token.is_none() && std::env::var("PROXMOX_API_TOKEN").is_err() {
+        cli.token = config.token.clone();
+    }
+
+    if cli.node.is_none() && std::env::var("PROXMOX_NODE").is_err() {
+        cli.node = config.node.clone();
+    }
+
+    if cli.verify_ssl.is_none() && std::env::var("PROXMOX_VERIFY_SSL").is_err() {
+        cli.verify_ssl = config.verify_ssl;
+    }
+
+    let client = if let Some(cluster_config) = config.get_cluster(cli.cluster.as_deref()) {
+        let port = cluster_config.port.unwrap_or(cli.port);
+        let token = cluster_config.token.or(cli.token.clone());
+        let verify_ssl = cluster_config
+            .verify_ssl
+            .unwrap_or(cli.verify_ssl.unwrap_or(false));
+
+        if cluster_config.hosts.is_empty() {
+            anyhow::bail!("No hosts configured for cluster");
+        }
+
+        ProxmoxClient::new_with_fallback(&cluster_config.hosts, port, token, verify_ssl).await?
+    } else {
+        if cli.token.is_none() {
+            eprintln!(
+                "Error: API token is required. Set PROXMOX_API_TOKEN, use -t, or add to config file"
+            );
+            std::process::exit(1);
+        }
+
+        let verify_ssl = cli.verify_ssl.unwrap_or(false);
+        ProxmoxClient::new(&cli.host, cli.port, cli.token.clone(), verify_ssl)?
+    };
+
     let snapshot_mgr = SnapshotManager::new(client.clone());
 
     match cli.command {
