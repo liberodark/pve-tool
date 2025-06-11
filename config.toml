@@ -6,7 +6,7 @@ verify_ssl = false
 
 # Multiple clusters configuration
 [clusters.prod]
-hosts = ["192.168.1.100", "192.168.1.101", "192.168.1.102"]
+hosts = ["192.168.1.100", "192.168.1.101:8007", "192.168.1.102"]
 token = "root@pam!prod=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 verify_ssl = true
 

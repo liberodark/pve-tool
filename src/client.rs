@@ -23,9 +23,21 @@ impl ProxmoxClient {
         })
     }
 
+    fn parse_host_port(host: &str, default_port: u16) -> (String, u16) {
+        if let Some((h, p)) = host.split_once(':') {
+            if let Ok(port) = p.parse::<u16>() {
+                (h.to_string(), port)
+            } else {
+                (host.to_string(), default_port)
+            }
+        } else {
+            (host.to_string(), default_port)
+        }
+    }
+
     pub async fn new_with_fallback(
         hosts: &[String],
-        port: u16,
+        default_port: u16,
         token: Option<String>,
         verify_ssl: bool,
     ) -> Result<Self> {
@@ -33,7 +45,8 @@ impl ProxmoxClient {
             .danger_accept_invalid_certs(!verify_ssl)
             .build()?;
 
-        for host in hosts {
+        for host_str in hosts {
+            let (host, port) = Self::parse_host_port(host_str, default_port);
             let base_url = format!("https://{}:{}/api2/json", host, port);
             let test_client = Self {
                 base_url: base_url.clone(),
