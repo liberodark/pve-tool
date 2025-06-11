@@ -13,7 +13,7 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    rustfmt --edition 2024 src/*.rs
+    rustfmt --edition 2024 src/*.rs tests/*.rs
     cargo audit
   '';
 

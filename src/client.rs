@@ -135,3 +135,64 @@ impl ProxmoxClient {
 struct ApiResponse<T> {
     data: T,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_host_port_with_valid_port() {
+        let (host, port) = ProxmoxClient::parse_host_port("192.168.1.1:9000", 8006);
+        assert_eq!(host, "192.168.1.1");
+        assert_eq!(port, 9000);
+    }
+
+    #[test]
+    fn test_parse_host_port_without_port() {
+        let (host, port) = ProxmoxClient::parse_host_port("192.168.1.1", 8006);
+        assert_eq!(host, "192.168.1.1");
+        assert_eq!(port, 8006);
+    }
+
+    #[test]
+    fn test_parse_host_port_with_invalid_port() {
+        let (host, port) = ProxmoxClient::parse_host_port("192.168.1.1:invalid", 8006);
+        assert_eq!(host, "192.168.1.1:invalid");
+        assert_eq!(port, 8006);
+    }
+
+    #[test]
+    fn test_parse_host_port_with_hostname() {
+        let (host, port) = ProxmoxClient::parse_host_port("pve.example.com:8007", 8006);
+        assert_eq!(host, "pve.example.com");
+        assert_eq!(port, 8007);
+    }
+
+    #[test]
+    fn test_parse_host_port_with_empty_port() {
+        let (host, port) = ProxmoxClient::parse_host_port("192.168.1.1:", 8006);
+        assert_eq!(host, "192.168.1.1:");
+        assert_eq!(port, 8006);
+    }
+
+    #[test]
+    fn test_new_creates_correct_base_url() {
+        let client = ProxmoxClient::new("192.168.1.100", 8006, None, false).unwrap();
+        assert_eq!(client.base_url, "https://192.168.1.100:8006/api2/json");
+        assert!(client.token.is_none());
+    }
+
+    #[test]
+    fn test_new_with_token() {
+        let token = "root@pam!backup=test-token";
+        let client = ProxmoxClient::new("pve.local", 8006, Some(token.to_string()), false).unwrap();
+        assert_eq!(client.base_url, "https://pve.local:8006/api2/json");
+        assert_eq!(client.token, Some(token.to_string()));
+    }
+
+    #[test]
+    fn test_new_with_custom_port() {
+        let client = ProxmoxClient::new("10.0.0.1", 9006, None, true).unwrap();
+        assert_eq!(client.base_url, "https://10.0.0.1:9006/api2/json");
+    }
+}
