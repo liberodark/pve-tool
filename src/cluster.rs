@@ -82,7 +82,7 @@ impl ClusterManager {
                 for item in items.iter().filter(|n| n.node_type == "node") {
                     if let Some(node_name) = item.node.as_ref().or(item.name.as_ref()) {
                         let status = item.status.as_deref().unwrap_or("unknown");
-                        println!("- {} ({})", node_name, status);
+                        println!("- {node_name} ({status})");
                     }
                 }
                 Ok(())

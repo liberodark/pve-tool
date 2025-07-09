@@ -189,11 +189,11 @@ async fn test_connection(client: ProxmoxClient) -> Result<()> {
         Ok(version) => {
             println!("✓ Connection successful!");
             if let Some(ver) = version.get("version").and_then(|v| v.as_str()) {
-                println!("  Proxmox VE version: {}", ver);
+                println!("  Proxmox VE version: {ver}");
             }
         }
         Err(e) => {
-            eprintln!("✗ Connection failed: {}", e);
+            eprintln!("✗ Connection failed: {e}");
             return Err(e);
         }
     }

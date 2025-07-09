@@ -52,13 +52,10 @@ impl SnapshotManager {
 
         let task_id: String = self
             .client
-            .post(&format!("/nodes/{}/qemu/{}/snapshot", node, vmid), &request)
+            .post(&format!("/nodes/{node}/qemu/{vmid}/snapshot"), &request)
             .await?;
 
-        println!(
-            "Creating snapshot '{}' on node {} for VM {}...",
-            snapname, node, vmid
-        );
+        println!("Creating snapshot '{snapname}' on node {node} for VM {vmid}...");
         self.wait_for_task(&node, &task_id).await?;
 
         Ok(())
@@ -69,16 +66,10 @@ impl SnapshotManager {
 
         let task_id = self
             .client
-            .delete(&format!(
-                "/nodes/{}/qemu/{}/snapshot/{}",
-                node, vmid, snapname
-            ))
+            .delete(&format!("/nodes/{node}/qemu/{vmid}/snapshot/{snapname}"))
             .await?;
 
-        println!(
-            "Deleting snapshot '{}' on node {} for VM {}...",
-            snapname, node, vmid
-        );
+        println!("Deleting snapshot '{snapname}' on node {node} for VM {vmid}...");
         self.wait_for_task(&node, &task_id).await?;
 
         Ok(())
@@ -96,10 +87,10 @@ impl SnapshotManager {
 
         let snapshots: Vec<Snapshot> = self
             .client
-            .get(&format!("/nodes/{}/qemu/{}/snapshot", node, vmid))
+            .get(&format!("/nodes/{node}/qemu/{vmid}/snapshot"))
             .await?;
 
-        println!("Snapshots for VM {} on node {}:", vmid, node);
+        println!("Snapshots for VM {vmid} on node {node}:");
         for snap in snapshots.iter().filter(|s| s.name != "current") {
             let time = snap
                 .snaptime
@@ -127,18 +118,12 @@ impl SnapshotManager {
         let task_id: String = self
             .client
             .post(
-                &format!(
-                    "/nodes/{}/qemu/{}/snapshot/{}/rollback",
-                    node, vmid, snapname
-                ),
+                &format!("/nodes/{node}/qemu/{vmid}/snapshot/{snapname}/rollback"),
                 &(),
             )
             .await?;
 
-        println!(
-            "Rolling back VM {} to snapshot '{}' on node {}...",
-            vmid, snapname, node
-        );
+        println!("Rolling back VM {vmid} to snapshot '{snapname}' on node {node}...");
         self.wait_for_task(&node, &task_id).await?;
 
         Ok(())
@@ -149,19 +134,19 @@ impl SnapshotManager {
 
         let info: serde_json::Value = self
             .client
-            .get(&format!("/nodes/{}/qemu/{}/status/current", node, vmid))
+            .get(&format!("/nodes/{node}/qemu/{vmid}/status/current"))
             .await?;
 
         println!("VM Information:");
-        println!("  Node: {}", node);
-        println!("  VMID: {}", vmid);
+        println!("  Node: {node}");
+        println!("  VMID: {vmid}");
 
         if let Some(name) = info.get("name").and_then(|v| v.as_str()) {
-            println!("  Name: {}", name);
+            println!("  Name: {name}");
         }
 
         if let Some(status) = info.get("status").and_then(|v| v.as_str()) {
-            println!("  Status: {}", status);
+            println!("  Status: {status}");
         }
 
         if let Some(cpu) = info.get("cpu").and_then(|v| v.as_f64()) {
@@ -187,7 +172,7 @@ impl SnapshotManager {
 
         let status: serde_json::Value = self
             .client
-            .get(&format!("/nodes/{}/qemu/{}/status/current", node, vmid))
+            .get(&format!("/nodes/{node}/qemu/{vmid}/status/current"))
             .await?;
 
         let vm_status = status
@@ -199,17 +184,17 @@ impl SnapshotManager {
             .and_then(|v| v.as_str())
             .unwrap_or("Unknown");
 
-        println!("VM ID: {}", vmid);
-        println!("Name: {}", name);
-        println!("Node: {}", node);
-        println!("Status: {}", vm_status);
+        println!("VM ID: {vmid}");
+        println!("Name: {name}");
+        println!("Node: {node}");
+        println!("Status: {vm_status}");
 
         if vm_status == "running" {
             if let Some(uptime) = status.get("uptime").and_then(|v| v.as_u64()) {
                 let days = uptime / 86400;
                 let hours = (uptime % 86400) / 3600;
                 let minutes = (uptime % 3600) / 60;
-                println!("Uptime: {}d {}h {}m", days, hours, minutes);
+                println!("Uptime: {days}d {hours}h {minutes}m");
             }
         }
 
@@ -273,7 +258,7 @@ impl SnapshotManager {
 
             let status: TaskStatus = self
                 .client
-                .get(&format!("/nodes/{}/tasks/{}/status", node, task_id))
+                .get(&format!("/nodes/{node}/tasks/{task_id}/status"))
                 .await?;
 
             match status.status.as_str() {

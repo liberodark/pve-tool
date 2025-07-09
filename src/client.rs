@@ -10,7 +10,7 @@ pub struct ProxmoxClient {
 
 impl ProxmoxClient {
     pub fn new(host: &str, port: u16, token: Option<String>, verify_ssl: bool) -> Result<Self> {
-        let base_url = format!("https://{}:{}/api2/json", host, port);
+        let base_url = format!("https://{host}:{port}/api2/json");
 
         let client = reqwest::Client::builder()
             .danger_accept_invalid_certs(!verify_ssl)
@@ -47,7 +47,7 @@ impl ProxmoxClient {
 
         for host_str in hosts {
             let (host, port) = Self::parse_host_port(host_str, default_port);
-            let base_url = format!("https://{}:{}/api2/json", host, port);
+            let base_url = format!("https://{host}:{port}/api2/json");
             let test_client = Self {
                 base_url: base_url.clone(),
                 token: token.clone(),
@@ -71,7 +71,7 @@ impl ProxmoxClient {
         let mut request = self.client.get(&url);
 
         if let Some(ref token) = self.token {
-            request = request.header("Authorization", format!("PVEAPIToken={}", token));
+            request = request.header("Authorization", format!("PVEAPIToken={token}"));
         }
 
         let response = request.send().await?;
@@ -95,7 +95,7 @@ impl ProxmoxClient {
         let mut request = self.client.post(&url);
 
         if let Some(ref token) = self.token {
-            request = request.header("Authorization", format!("PVEAPIToken={}", token));
+            request = request.header("Authorization", format!("PVEAPIToken={token}"));
         }
 
         let response = request.form(data).send().await?;
@@ -115,7 +115,7 @@ impl ProxmoxClient {
         let mut request = self.client.delete(&url);
 
         if let Some(ref token) = self.token {
-            request = request.header("Authorization", format!("PVEAPIToken={}", token));
+            request = request.header("Authorization", format!("PVEAPIToken={token}"));
         }
 
         let response = request.send().await?;
