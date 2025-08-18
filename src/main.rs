@@ -85,22 +85,24 @@ async fn main() -> Result<()> {
     let mut cli = Cli::parse();
 
     let mut config = Config::default();
-    if let Some(config_path) = &cli.config {
-        if let Ok(config_str) = fs::read_to_string(config_path) {
-            config = toml::from_str::<Config>(&config_str)?;
-        }
+    if let Some(config_path) = &cli.config
+        && let Ok(config_str) = fs::read_to_string(config_path)
+    {
+        config = toml::from_str::<Config>(&config_str)?;
     }
 
-    if cli.host == "192.168.1.1" && std::env::var("PROXMOX_HOST").is_err() {
-        if let Some(host) = &config.host {
-            cli.host = host.clone();
-        }
+    if cli.host == "192.168.1.1"
+        && std::env::var("PROXMOX_HOST").is_err()
+        && let Some(host) = &config.host
+    {
+        cli.host = host.clone();
     }
 
-    if cli.port == 8006 && std::env::var("PROXMOX_PORT").is_err() {
-        if let Some(port) = config.port {
-            cli.port = port;
-        }
+    if cli.port == 8006
+        && std::env::var("PROXMOX_PORT").is_err()
+        && let Some(port) = config.port
+    {
+        cli.port = port;
     }
 
     if cli.token.is_none() && std::env::var("PROXMOX_API_TOKEN").is_err() {

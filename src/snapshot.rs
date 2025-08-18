@@ -153,15 +153,15 @@ impl SnapshotManager {
             println!("  CPU Usage: {:.2}%", cpu * 100.0);
         }
 
-        if let Some(mem) = info.get("mem").and_then(|v| v.as_u64()) {
-            if let Some(maxmem) = info.get("maxmem").and_then(|v| v.as_u64()) {
-                println!(
-                    "  Memory: {} MB / {} MB ({:.1}%)",
-                    mem / 1048576,
-                    maxmem / 1048576,
-                    (mem as f64 / maxmem as f64) * 100.0
-                );
-            }
+        if let Some(mem) = info.get("mem").and_then(|v| v.as_u64())
+            && let Some(maxmem) = info.get("maxmem").and_then(|v| v.as_u64())
+        {
+            println!(
+                "  Memory: {} MB / {} MB ({:.1}%)",
+                mem / 1048576,
+                maxmem / 1048576,
+                (mem as f64 / maxmem as f64) * 100.0
+            );
         }
 
         Ok(())
@@ -189,13 +189,13 @@ impl SnapshotManager {
         println!("Node: {node}");
         println!("Status: {vm_status}");
 
-        if vm_status == "running" {
-            if let Some(uptime) = status.get("uptime").and_then(|v| v.as_u64()) {
-                let days = uptime / 86400;
-                let hours = (uptime % 86400) / 3600;
-                let minutes = (uptime % 3600) / 60;
-                println!("Uptime: {days}d {hours}h {minutes}m");
-            }
+        if vm_status == "running"
+            && let Some(uptime) = status.get("uptime").and_then(|v| v.as_u64())
+        {
+            let days = uptime / 86400;
+            let hours = (uptime % 86400) / 3600;
+            let minutes = (uptime % 3600) / 60;
+            println!("Uptime: {days}d {hours}h {minutes}m");
         }
 
         Ok(())

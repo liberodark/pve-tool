@@ -24,10 +24,10 @@ impl ClusterManager {
 
         let resources: Vec<Resource> = self.client.get("/cluster/resources?type=vm").await?;
 
-        if let Ok(vmid) = vm_identifier.parse::<u32>() {
-            if let Some(resource) = resources.iter().find(|r| r.vmid == vmid) {
-                return Ok((resource.node.clone(), resource.vmid));
-            }
+        if let Ok(vmid) = vm_identifier.parse::<u32>()
+            && let Some(resource) = resources.iter().find(|r| r.vmid == vmid)
+        {
+            return Ok((resource.node.clone(), resource.vmid));
         }
 
         if let Some(resource) = resources
