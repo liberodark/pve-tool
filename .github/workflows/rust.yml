@@ -110,13 +110,13 @@ jobs:
           tar -czvf pve-tool-${{ env.VERSION }}-linux-x86_64.tar.gz pve-tool
           cd ../..
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: pve-tool-linux
           path: target/release/pve-tool
       - name: Upload tarball artifact
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: pve-tool-linux-tarball
           path: target/release/pve-tool-${{ env.VERSION }}-linux-x86_64.tar.gz
